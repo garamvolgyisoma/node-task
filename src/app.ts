@@ -92,7 +92,7 @@ function runLoadTest() {
 
   fs.writeFileSync("attack.txt", attackDefinition);
 
-  const command = `vegeta attack -rate=1000 -duration=60s -targets=attack.txt | vegeta report`;
+  const command = `vegeta attack -rate=1000 -duration=60s -timeout=31s -targets=attack.txt | vegeta report`;
 
   exec(command, (error, stdout, stderr) => {
     if (error) {
