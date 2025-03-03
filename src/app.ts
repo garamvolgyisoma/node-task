@@ -35,7 +35,7 @@ async function relayWebhook(req: Request, res: Response) {
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
 
-    const response = await axios.post(serviceUrl, req.body);
+    const response = await axios.post(serviceUrl, req.body, { timeout: 30000 });
     res.status(response.status).send(response.data);
   } catch (error: any) {
     if (error.response) {
