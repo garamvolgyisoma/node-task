@@ -1,4 +1,56 @@
-import express from "express";
+import express, { Request, Response } from "express";
+import axios from "axios";
+import { randomInt } from "crypto";
+
+const app = express();
+const port = 3000;
+
+app.use(express.json());
+
+const internalServices = [
+  { url: "http://localhost:3001/service1" },
+  { url: "http://localhost:3002/service2" },
+  { url: "http://localhost:3003/service3" },
+];
+
+async function relayWebhook(req: Request, res: Response) {
+  try {
+    const randomService = internalServices[randomInt(internalServices.length)];
+    const serviceUrl = randomService.url;
+
+    if (Math.random() < 0.3) {
+      const errorCodes = [400, 500, 502, 503];
+      const errorCode = errorCodes[randomInt(errorCodes.length)];
+      return res
+        .status(errorCode)
+        .send({ error: `Simulated error: ${errorCode}` });
+    }
+
+    if (Math.random() < 0.3) {
+      const delay = randomInt(30000);
+      console.log(`Simulating delay of ${delay}ms for ${serviceUrl}`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+
+    const response = await axios.post(serviceUrl, req.body);
+    res.status(response.status).send(response.data);
+  } catch (error: any) {
+    if (error.response) {
+      res.status(error.response.status).send(error.response.data);
+    } else {
+      console.error("Error relaying webhook:", error);
+      res.status(500).send({ error: "Internal server error" });
+    }
+  }
+}
+
+app.post("/webhook", async (req, res) => {
+  await relayWebhook(req, res);
+});
+
+app.listen(port, () => {
+  console.log(`Webhook relay server listening at http://localhost:${port}`);
+});
 
 // Mock Internal Service 1
 const app1 = express();
