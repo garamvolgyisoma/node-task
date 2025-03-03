@@ -1,6 +1,9 @@
 import express, { Request, Response } from "express";
 import axios from "axios";
 import { randomInt } from "crypto";
+import { exec } from "child_process";
+import * as fs from "fs";
+import * as os from "os";
 
 const app = express();
 const port = 3000;
@@ -80,3 +83,24 @@ app3.post("/service3", (req, res) => {
 });
 
 app3.listen(3003, () => console.log("Mock Service 3 listening on port 3003"));
+
+function runLoadTest() {
+  const jsonBody = JSON.stringify({ test: "load" });
+  fs.writeFileSync("body.json", jsonBody);
+
+  const attackDefinition = `POST http://localhost:3000/webhook${os.EOL}Content-Type: application/json${os.EOL}Content-Length: ${jsonBody.length}${os.EOL}@./body.json`;
+
+  fs.writeFileSync("attack.txt", attackDefinition);
+
+  const command = `vegeta attack -rate=1000 -duration=60s -targets=attack.txt | vegeta report`;
+
+  exec(command, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`Error running load test: ${error}`);
+      return;
+    }
+    console.log(`Load test results:\n${stdout}`);
+  });
+}
+
+setTimeout(runLoadTest, 2000);
